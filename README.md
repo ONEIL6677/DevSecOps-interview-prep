@@ -1,0 +1,2 @@
+# Welcome to the DevOps Interview Questions & Answers Repository! 
+This repository is a comprehensive, community-driven guide designed to help engineers ace their DevOps, SRE, and Platform Engineering interviews. Whether you are a fresher getting started or a seasoned expert targeting Big Tech companies, this resource covers everything you need to succeed.
