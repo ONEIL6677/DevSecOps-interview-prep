@@ -1,4 +1,4 @@
-# Terraform Scenario-Based Interview Questions — DevOps &amp; DevSecOps
+# Terraform Scenario-Based Interview Questions DevOps &amp; DevSecOps
 
 A collection of real-world, scenario-style Terraform interview questions with detailed answers, covering both general DevOps usage and DevSecOps-specific security concerns.
 
@@ -24,8 +24,8 @@ If the backend does **not** support locking (e.g. local state file, or a misconf
 **Scenario:** During a security audit, you discover `terraform.tfstate` was committed to your repository months ago, and the repo is public.
 
 **Answer:**
-1. **Treat everything in that state file as compromised** — state files often contain sensitive values in plaintext (DB passwords, private keys, connection strings), even for resources that look innocuous.
-2. **Rotate every credential referenced in the state immediately** — don't wait to investigate first.
+1. **Treat everything in that state file as compromised** state files often contain sensitive values in plaintext (DB passwords, private keys, connection strings), even for resources that look innocuous.
+2. **Rotate every credential referenced in the state immediately** don't wait to investigate first.
 3. **Remove the file from Git history** (not just delete it going forward) using a tool like `git filter-repo`, since deleting it in a new commit leaves it recoverable in history.
 4. **Add `*.tfstate` and `*.tfstate.backup` to `.gitignore`** immediately.
 5. **Migrate to a remote backend** (S3, Terraform Cloud, etc.) with encryption at rest and access controls, so state is never a local/committable file again.
@@ -37,11 +37,11 @@ If the backend does **not** support locking (e.g. local state file, or a misconf
 
 **Scenario:** You run `terraform plan` on infrastructure nobody has touched in Terraform recently, and it shows several unexpected changes.
 
-**Answer:** This is **configuration drift** — someone (or something) modified the actual infrastructure outside of Terraform, e.g. via the AWS Console, CLI, or another automation tool, and Terraform's state no longer matches reality.
+**Answer:** This is **configuration drift** someone (or something) modified the actual infrastructure outside of Terraform, e.g. via the AWS Console, CLI, or another automation tool, and Terraform's state no longer matches reality.
 
 **How to handle it:**
 - Run `terraform plan` to see the diff clearly before doing anything.
-- Investigate **why** the drift happened — was it an emergency manual fix, unauthorized access, or another tool interfering?
+- Investigate **why** the drift happened was it an emergency manual fix, unauthorized access, or another tool interfering?
 - Decide whether to:
   - **Accept the drift** and update Terraform code to match reality, then `terraform apply` to reconcile state, or
   - **Reject the drift** and run `terraform apply` to force infrastructure back to the Terraform-defined state.
@@ -55,13 +55,13 @@ If the backend does **not** support locking (e.g. local state file, or a misconf
 
 **Answer:** Never hardcode it in `.tf` files or `terraform.tfvars` committed to Git. Options, from most to least recommended:
 
-1. **Secrets manager integration** — pull the value dynamically using a data source:
+1. **Secrets manager integration** pull the value dynamically using a data source:
 ```hcl
 data "aws_secretsmanager_secret_version" "db_password" {
   secret_id = "prod/db/password"
 }
 ```
-2. **HashiCorp Vault provider** — similar pattern using the Vault Terraform provider to fetch secrets at plan/apply time.
+2. **HashiCorp Vault provider** similar pattern using the Vault Terraform provider to fetch secrets at plan/apply time.
 3. **Environment variables** passed via `TF_VAR_` prefix, injected by your CI/CD pipeline from a secrets store, never written to disk:
 ```bash
 export TF_VAR_db_password=$(vault kv get -field=password secret/db)
@@ -74,19 +74,19 @@ variable "db_password" {
 }
 ```
 
-**Important caveat to mention in an interview:** marking a variable `sensitive` hides it from CLI output, but it is still stored in **plaintext in the state file** — so backend encryption and access control remain essential regardless.
+**Important caveat to mention in an interview:** marking a variable `sensitive` hides it from CLI output, but it is still stored in **plaintext in the state file** so backend encryption and access control remain essential regardless.
 
 ---
 
-## 5. Your `terraform apply` partially fails halfway through — some resources were created, others weren't. What now?
+## 5. Your `terraform apply` partially fails halfway through some resources were created, others weren't. What now?
 
 **Scenario:** A network blip or a cloud API error causes `terraform apply` to fail after creating 6 of 10 planned resources.
 
 **Answer:**
-- Terraform's state is **updated incrementally as it applies**, not all at once at the end — so the 6 successfully created resources are already reflected in the state file.
+- Terraform's state is **updated incrementally as it applies**, not all at once at the end so the 6 successfully created resources are already reflected in the state file.
 - Simply **re-run `terraform apply`**. Terraform will compare the current state against the desired state and only attempt to create/modify the remaining resources, not recreate what already succeeded.
 - If a resource was left in a broken/partial state (e.g. an EC2 instance that started but never finished configuring), you may need `terraform apply -replace=<resource>` to force Terraform to destroy and recreate that specific resource cleanly.
-- In CI/CD, this is why `terraform apply` should generally be **idempotent and safely re-runnable** as a core design principle — pipelines shouldn't assume a single successful run is guaranteed.
+- In CI/CD, this is why `terraform apply` should generally be **idempotent and safely re-runnable** as a core design principle pipelines shouldn't assume a single successful run is guaranteed.
 
 ---
 
@@ -96,7 +96,7 @@ variable "db_password" {
 
 **Answer, layered defense:**
 1. **Separate state/backends per environment** (dev/staging/prod), so a mistake in one can't touch another.
-2. **RBAC on the CI/CD pipeline and cloud provider** — junior engineers get read-only or plan-only access to production; only a restricted group can trigger applies/destroys.
+2. **RBAC on the CI/CD pipeline and cloud provider** junior engineers get read-only or plan-only access to production; only a restricted group can trigger applies/destroys.
 3. **Require manual approval gates** in the pipeline before any `apply`/`destroy` runs against production (see the pipeline diagram in question 9).
 4. Use `prevent_destroy` lifecycle rules on critical resources:
 ```hcl
@@ -107,7 +107,7 @@ resource "aws_db_instance" "prod" {
   }
 }
 ```
-5. **Never run `terraform destroy` manually against prod** — route all changes through the pipeline, where the plan is visible and reviewed before anything executes.
+5. **Never run `terraform destroy` manually against prod** route all changes through the pipeline, where the plan is visible and reviewed before anything executes.
 
 ---
 
@@ -168,37 +168,37 @@ This would flag the public ACL as a high-severity finding and fail the build.
 conftest test plan.json
 ```
 
-3. Even with both of these, a **human review of the `terraform plan` output** before a production apply is a good final backstop — the pipeline should require manual approval for prod changes.
+3. Even with both of these, a **human review of the `terraform plan` output** before a production apply is a good final backstop the pipeline should require manual approval for prod changes.
 
 ---
 
 ## 9. Walk me through what a secure, production-ready Terraform CI/CD pipeline looks like.
 
 **Answer, referring to the diagram above:**
-1. **Write Terraform** — code is written and pushed to a feature branch.
-2. **Format &amp; Validate** — `terraform fmt -check` and `terraform validate` catch syntax issues and style violations immediately.
-3. **Security Scan** — `tfsec`/`checkov` scans the code for misconfigurations (open security groups, public buckets, missing encryption, etc.) and fails the pipeline on high-severity findings.
-4. **`terraform plan`** — generates a preview of exactly what will change, saved as an artifact for review.
-5. **Policy as Code** — OPA/Sentinel evaluates the plan against organizational rules (tagging standards, allowed regions, cost thresholds, etc.).
-6. **Manual Approval** — for production environments specifically, a human reviews the plan output and explicitly approves before anything is applied.
-7. **`terraform apply`** — only now does infrastructure actually get provisioned, with the remote backend updating state safely (with locking, as covered in question 1).
+1. **Write Terraform** code is written and pushed to a feature branch.
+2. **Format &amp; Validate** `terraform fmt -check` and `terraform validate` catch syntax issues and style violations immediately.
+3. **Security Scan** `tfsec`/`checkov` scans the code for misconfigurations (open security groups, public buckets, missing encryption, etc.) and fails the pipeline on high-severity findings.
+4. **`terraform plan`** generates a preview of exactly what will change, saved as an artifact for review.
+5. **Policy as Code** OPA/Sentinel evaluates the plan against organizational rules (tagging standards, allowed regions, cost thresholds, etc.).
+6. **Manual Approval** for production environments specifically, a human reviews the plan output and explicitly approves before anything is applied.
+7. **`terraform apply`** only now does infrastructure actually get provisioned, with the remote backend updating state safely (with locking, as covered in question 1).
 
-**Why this matters in an interview:** this shows you understand DevSecOps isn't "add a scanning step" — it's security gates distributed across multiple stages, each catching a different class of problem, with human judgment reserved for the highest-stakes step (production apply) rather than the whole process.
+**Why this matters in an interview:** this shows you understand DevSecOps isn't "add a scanning step" it's security gates distributed across multiple stages, each catching a different class of problem, with human judgment reserved for the highest-stakes step (production apply) rather than the whole process.
 
 ---
 
 ## 10. How do you handle Terraform state file corruption?
 
-**Scenario:** Your `terraform.tfstate` becomes corrupted or partially unreadable — perhaps from an interrupted write or a bad manual edit.
+**Scenario:** Your `terraform.tfstate` becomes corrupted or partially unreadable perhaps from an interrupted write or a bad manual edit.
 
 **Answer:**
-1. **Check for a backup first** — Terraform automatically creates `terraform.tfstate.backup` before most operations that modify state. If using a remote backend like S3 with versioning enabled, previous versions of the state file are also recoverable there.
+1. **Check for a backup first** Terraform automatically creates `terraform.tfstate.backup` before most operations that modify state. If using a remote backend like S3 with versioning enabled, previous versions of the state file are also recoverable there.
 2. **Restore from the last known-good version:**
 ```bash
 aws s3api get-object --bucket my-tf-state --key prod/terraform.tfstate --version-id <previous-version-id> terraform.tfstate
 ```
 3. **Reconcile any gap** between the restored state and real infrastructure with `terraform plan`, and manually `terraform import` any resources created after that backup was taken but missing from the restored state.
-4. **Prevention:** always enable **versioning** on your state storage backend (e.g. S3 bucket versioning) — this is the single most effective safeguard against unrecoverable state loss.
+4. **Prevention:** always enable **versioning** on your state storage backend (e.g. S3 bucket versioning) this is the single most effective safeguard against unrecoverable state loss.
 
 ---
 
