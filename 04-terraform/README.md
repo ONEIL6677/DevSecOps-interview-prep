@@ -24,7 +24,7 @@ A practical, scenario-driven Terraform interview prep guide for experienced DevO
 **Scenario:** Two engineers run `terraform apply` on the same workspace at the same time. What happens, and how do you prevent state corruption?
 
 **Answer:**
-Terraform uses a **locking mechanism** on the backend to serialize writes to the state file. With an S3 backend + DynamoDB (or S3's native locking in Terraform 1.11+), the second `apply` is blocked until the first one releases the lock — it doesn't silently overwrite state.
+Terraform uses a **locking mechanism** on the backend to serialize writes to the state file. With an S3 backend + DynamoDB (or S3's native locking in Terraform 1.11+), the second `apply` is blocked until the first one releases the lock it doesn't silently overwrite state.
 
 ![Terraform State Locking](tf-state-locking.jpeg)
 
