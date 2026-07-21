@@ -1,6 +1,6 @@
 # Terraform Scenario-Based Interview Questions & Answers
 
-A practical, scenario-driven Terraform interview prep guide for experienced DevOps/Infra engineers — covering state management, module design, drift, secrets, imports, and disaster recovery. Each question reflects a real production situation rather than pure syntax trivia.
+A practical, scenario-driven Terraform interview prep guide for experienced DevOps/Infra engineers covering state management, module design, drift, secrets, imports, and disaster recovery. Each question reflects a real production situation rather than pure syntax trivia.
 
 ---
 
@@ -46,7 +46,7 @@ If a lock gets stuck (e.g., a CI job was killed mid-apply), you can manually rel
 terraform force-unlock <LOCK_ID>
 ```
 
-> **Interview tip:** Mention that `force-unlock` should only be used after confirming no other apply is actually in progress — forcing it while a real apply is running is how state corruption happens.
+> **Interview tip:** Mention that `force-unlock` should only be used after confirming no other apply is actually in progress forcing it while a real apply is running is how state corruption happens.
 
 ---
 
@@ -55,7 +55,7 @@ terraform force-unlock <LOCK_ID>
 **Scenario:** You need the same VPC setup in dev, staging, and prod, but with different CIDR ranges and instance sizes. How do you avoid duplicating code three times?
 
 **Answer:**
-Build a single reusable **module**, and drive environment differences through variables — not copy-pasted `.tf` files.
+Build a single reusable **module**, and drive environment differences through variables not copy-pasted `.tf` files.
 
 ![Module Structure](tf-module-structure.jpeg)
 
@@ -101,7 +101,7 @@ Each environment gets its **own state file** (separate backend key), so a mistak
 **Scenario:** Your S3 state file bucket had an accidental object overwrite and the current state is corrupted. Infrastructure is still running fine. How do you recover without downtime?
 
 **Answer:**
-1. **Don't panic-apply.** The real infrastructure is untouched — only Terraform's record of it is broken.
+1. **Don't panic-apply.** The real infrastructure is untouched only Terraform's record of it is broken.
 2. Restore from **S3 versioning** if enabled (this is why versioning on the state bucket is non-negotiable):
    ```bash
    aws s3api list-object-versions --bucket company-tfstate --prefix prod/network/terraform.tfstate
@@ -110,7 +110,7 @@ Each environment gets its **own state file** (separate backend key), so a mistak
 3. If no backup exists, rebuild state using `terraform import` for each resource against real infrastructure IDs.
 4. Run `terraform plan` immediately after recovery — a clean plan (no unexpected diff) confirms state now matches reality.
 
-> **Interview tip:** This question is really testing whether you enable **state bucket versioning and encryption by default** — say so explicitly, it's the preventive answer they're listening for.
+> **Interview tip:** This question is really testing whether you enable **state bucket versioning and encryption by default** say so explicitly, it's the preventive answer they're listening for.
 
 ---
 
@@ -121,12 +121,12 @@ Each environment gets its **own state file** (separate backend key), so a mistak
 **Answer:**
 Two options depending on intent:
 
-**A. The manual change was a mistake** — let Terraform revert it:
+**A. The manual change was a mistake** let Terraform revert it:
 ```bash
 terraform apply
 ```
 
-**B. The manual change should be kept** — update the `.tf` code to match reality, then reconcile state:
+**B. The manual change should be kept** update the `.tf` code to match reality, then reconcile state:
 ```bash
 terraform apply -refresh-only
 ```
@@ -200,7 +200,7 @@ variable "db_password" {
 }
 ```
 
-- Note: `sensitive = true` hides values from CLI output but **does not encrypt them in the state file** — state itself must be encrypted at rest (S3 `encrypt = true` + KMS).
+- Note: `sensitive = true` hides values from CLI output but **does not encrypt them in the state file** state itself must be encrypted at rest (S3 `encrypt = true` + KMS).
 
 ---
 
@@ -248,10 +248,13 @@ terraform {
   }
 }
 ```
-
+>generates .terraform.lock.hcl
 ```bash
-terraform init      # generates .terraform.lock.hcl
-git add .terraform.lock.hcl   # commit it — this is what makes builds reproducible
+terraform init
+```
+>commit it — this is what makes builds reproducible
+```bash
+git add .terraform.lock.hcl
 ```
 
 The lock file guarantees every teammate and every CI run resolves to the exact same provider version until someone deliberately runs `terraform init -upgrade`.
@@ -272,7 +275,7 @@ moved {
 }
 ```
 
-Run `terraform plan` — it should show **0 to add, 0 to destroy**, confirming Terraform mapped the existing resource to its new address in state without touching real infrastructure.
+Run `terraform plan` it should show **0 to add, 0 to destroy**, confirming Terraform mapped the existing resource to its new address in state without touching real infrastructure.
 
 ---
 
@@ -285,18 +288,18 @@ Run `terraform plan` — it should show **0 to add, 0 to destroy**, confirming T
 | | **Workspaces** | **Directory per environment** |
 |---|---|---|
 | State isolation | Same backend, different state per workspace | Fully separate backend/state per env |
-| Risk of wrong-env apply | Higher — easy to forget `terraform workspace select` | Lower — path itself forces intent |
-| Variable differences | Harder to manage cleanly | Natural fit — one `.tfvars` per dir |
+| Risk of wrong-env apply | Higher easy to forget `terraform workspace select` | Lower path itself forces intent |
+| Variable differences | Harder to manage cleanly | Natural fit one `.tfvars` per dir |
 | Best for | Small teams, ephemeral/ short-lived environments (feature branches) | Teams managing prod-critical, long-lived infra |
 
-**Recommendation:** For a 10-engineer team managing production-critical infrastructure, directory-per-environment is safer — the explicit path (`envs/prod/`) makes it much harder to accidentally apply against production, and access controls (IAM/CI permissions) can be scoped per directory.
+**Recommendation:** For a 10-engineer team managing production-critical infrastructure, directory-per-environment is safer the explicit path (`envs/prod/`) makes it much harder to accidentally apply against production, and access controls (IAM/CI permissions) can be scoped per directory.
 
 ---
 
 ## Notes for the Interview
 
-- Always tie your answer back to **why it matters in production** (blast radius, team safety, auditability) — not just "how the command works."
-- If asked to whiteboard, sketch the state file / backend / lock relationship first — most Terraform incidents trace back to state management, not resource syntax.
+- Always tie your answer back to **why it matters in production** (blast radius, team safety, auditability) not just "how the command works."
+- If asked to whiteboard, sketch the state file / backend / lock relationship first most Terraform incidents trace back to state management, not resource syntax.
 
 ---
 
