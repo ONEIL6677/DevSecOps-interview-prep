@@ -26,7 +26,7 @@ A practical, scenario-driven Terraform interview prep guide for experienced DevO
 **Answer:**
 Terraform uses a **locking mechanism** on the backend to serialize writes to the state file. With an S3 backend + DynamoDB (or S3's native locking in Terraform 1.11+), the second `apply` is blocked until the first one releases the lock — it doesn't silently overwrite state.
 
-![Terraform State Locking](tf_state_locking.jpeg)
+![Terraform State Locking](tf-state-locking.jpeg)
 
 ```hcl
 terraform {
@@ -57,7 +57,7 @@ terraform force-unlock <LOCK_ID>
 **Answer:**
 Build a single reusable **module**, and drive environment differences through variables — not copy-pasted `.tf` files.
 
-![Module Structure](tf_module_structure.jpeg)
+![Module Structure](tf-module-structure.jpeg)
 
 ```
 modules/
@@ -300,4 +300,4 @@ Run `terraform plan` — it should show **0 to add, 0 to destroy**, confirming T
 
 ---
 
-*O'Neil · DevOps / AIOps Engineer*
+*O'Neil Kimbi · DevSecOps / AIOps Engineer*
